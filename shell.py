@@ -36,14 +36,11 @@ def repl(command=None):
             ]))
             print('')
             print('Enter empty line to quit')
-        elif cmd == 'punnify':
-            print('TIME TO PUNNIFY')
-            print(line)
-            punerator.punnify(line)
+        elif cmd == 'subs':
+            print('Finding substitutions for {}'.format(line))
+            punerator.subs(line)
         else:
             print('Unrecognized command:', cmd)
-
-        print('')
 
 def main():
     args = parseArgs()
