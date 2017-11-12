@@ -39,6 +39,13 @@ def repl(command=None):
         elif cmd == 'subs':
             print('Finding substitutions for {}'.format(line))
             punerator.subs(line)
+        elif cmd == 'pun':
+            if (len(line) < 2):
+                'Not enough inputs: Expected input of the form \'pun <theme> <sentence>\''
+            theme_and_sentence = line.split(None, 1)
+            theme, sentence = theme_and_sentence[0], ' '.join(theme_and_sentence[1:])
+            print('Punnify!  Theme: {} Sentence: {}'.format(theme, sentence))
+            punerator.pun(theme, sentence)
         else:
             print('Unrecognized command:', cmd)
 
