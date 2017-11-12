@@ -24,7 +24,7 @@ def repl(command=None):
             cmd = command
             line = line
 
-        print ''
+        print('')
 
         if cmd == 'help':
             print('Usage: <command> [arg1, arg2, ...]')
@@ -41,9 +41,9 @@ def repl(command=None):
             print(line)
             punerator.punnify(line)
         else:
-            print 'Unrecognized command:', cmd
+            print('Unrecognized command:', cmd)
 
-        print ''
+        print('')
 
 def main():
     args = parseArgs()
