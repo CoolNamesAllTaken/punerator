@@ -15,7 +15,20 @@ def synonyms(word):
 	for synset in syns:
 		for lemma in synset.lemmas():
 			synonyms.append(lemma.name())
+	print("word={} synonyms={}".format(word, synonyms))
 	return set(synonyms)
+
+def wup_similarity(word1, word2):
+	word1_synsets = wn.synsets(word1) # TODO: figure out which synset to use
+	word2_synsets = wn.synsets(word2)
+	# print("word1_synsets={} word2_synsets={}".format(word1_synsets, word2_synsets))
+	if not word1_synsets or not word2_synsets: return float('inf') # word has no synonyms
+	# print("wup_similarity word1={} word2={}".format(word1, word2))
+	similarity = word1_synsets[0].wup_similarity(word2_synsets[0]) # score is wu-palmer similarity between swapped word and theme word
+	# print('similarity={}'.format(similarity))
+	if similarity == None: return float('inf')
+	# print('returning it anyways!')
+	return similarity
 
 def synset_names(synset):
 	"""

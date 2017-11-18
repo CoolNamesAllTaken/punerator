@@ -4,6 +4,9 @@ import sys
 import punerator
 import wordCostUtil as wc
 
+CORPUS_PATH = "EnglishText.txt" # corpus for training bigram and unigram cost functions
+_, BIGRAM_COST = wc.fetchCosts()
+
 def parseArgs():
     p = argparse.ArgumentParser()
     p.add_argument('--command', help='Always use this model')
@@ -13,7 +16,7 @@ def repl(command=None):
     '''REPL: read, evaluate, print, loop'''
 
     while True:
-        sys.stdout.write(">> ")
+        sys.stdout.write('>> ')
         line = sys.stdin.readline().strip()
         if not line:
             break
@@ -35,6 +38,7 @@ def repl(command=None):
                 ('subs', 'List synonyms for each word in string'),
                 ('pun_bs', 'Punnifies a string using the baseline algorithm'),
                 ('pun_ai', 'Punnifies a string using a sooper dooper fancy AI algorithm'),
+                ('train', 'Trains unigram/bigram costs on the text corpus'),
                 ('cmd2', 'Description'),
             ]))
             print('')
@@ -55,15 +59,21 @@ def repl(command=None):
             theme_and_sentence = line.split(None, 1)
             theme, sentence = theme_and_sentence[0], ' '.join(theme_and_sentence[1:])
             print('AI Punnify!  Theme: {} Sentence: {}'.format(theme, sentence))
-            punerator.punnify_ai(theme, sentence)
+            punerator.punnify_ai(theme, sentence, BIGRAM_COST)
         elif cmd == 'train':
             print('Training bigram/unigram cost functions on corpus...')
-            wc.calculateCosts()
+            wc.createCosts(CORPUS_PATH)
             print('Done!')
         else:
             print('Unrecognized command:', cmd)
 
 def main():
     args = parseArgs()
+
+    # print("Fetching Bigram Cost...")
+    # _, BIGRAM_COST = wc.fetchCosts()
+    # print("bigramCost={}".format(BIGRAM_COST))
+    # print("Done!")
+
     repl(command=args.command)
 

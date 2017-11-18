@@ -3,6 +3,9 @@ import dill as pickle
 import collections
 import math
 
+UNIGRAM_FILENAME = 'uni'
+BIGRAM_FILENAME = 'bi'
+
 SENTENCE_BEGIN = '-BEGIN-'
 
 #Code from CS221 Reconstruct assignment, specifically wordsegUtil.py (CA:Yang Yuan)
@@ -53,9 +56,14 @@ def calculateCosts(path):
 
 	return unigramCost, bigramModel
 
+def createCosts(path):
+	unigramCost, bigramCost = calculateCosts(path)
+	pickle.dump(unigramCost, open(UNIGRAM_FILENAME, "wb"))
+	pickle.dump(bigramCost, open(BIGRAM_FILENAME, "wb"))
+
 def fetchCosts():
-	unigramCost = pickle.load(open("uni", "rb"))
-	bigramCost = pickle.load(open("bi", "rb"))
+	unigramCost = pickle.load(open(UNIGRAM_FILENAME, "rb"))
+	bigramCost = pickle.load(open(BIGRAM_FILENAME, "rb"))
 	return unigramCost, bigramCost
 #*********************************************************************************
 #Usage Example

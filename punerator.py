@@ -5,7 +5,7 @@ from nltk.corpus import wordnet as wn
 
 import wordCostUtil as wc
 
-import shell, util, collections, copy
+import shell, util, collections, copy, math
 
 '''
 TODO:
@@ -56,52 +56,55 @@ def punnify_baseline(theme, sentence):
 # Actual attempt at AI
 
 class PunnificationProblem(util.SearchProblem):
-	def __init__(self, queryTheme, querySentence, bigramCost, possibleSwaps):
+	def __init__(self, queryTheme, queryWords, bigramCost, punCost, possibleSwaps):
+		print("New PunnificationProblem: queryWords={} bigramCost={}".format(queryWords, bigramCost))
 		self.queryTheme = queryTheme
-		self.querySentence = querySentence
+		self.queryWords = queryWords
 		self.bigramCost = bigramCost
+		self.punCost = punCost
 		self.possibleSwaps = possibleSwaps
 
 	def startState(self):
 		return (wc.SENTENCE_BEGIN, 0)
 	def isEnd(self, state):
-		return state[1] >= len(self.querySentence)
+		return state[1] >= len(self.queryWords)
 
 	def succAndCost(self, state):
 		edges = []
 		# print("state={}".format(state[0]))
-		swaps = self.possibleSwaps(self.querySentence[state[1]])
+		swaps = self.possibleSwaps(self.queryWords[state[1]])
 		# print("  possibleFills={}".format(fills))
 		if (len(swaps) == 0): # no valid swaps, just append current string and move on
-			swap = self.querySentence[state[1]]
+			swap = self.queryWords[state[1]]
 			action = swap
 			newState = (swap, state[1] + 1)
-			cost = self.bigramCost(state[0], newState[0])
+			cost = math.log(self.bigramCost(state[0], newState[0])**2 * self.punCost(self.queryTheme, swap))
 			edges.append((action, newState, cost))
 			return edges
 		for swap in swaps: # found valid fills, step through them and create edges
 			action = swap
 			newState = (swap, state[1] + 1)
-			cost = self.bigramCost(state[0], newState[0])
+			cost = math.log(self.bigramCost(state[0], newState[0])**2 * self.punCost(self.queryTheme, swap))
 			# print("    action={} newState={} cost={}".format(action, newState, cost))
 			edges.append((action, newState, cost))
 
 		return edges
 
-def punnify_ai(queryTheme, querySentence):
-	if len(querySentence) == 0:
+def punnify_ai(queryTheme, querySentence, bigramCost):
+	queryWords = querySentence.split()
+
+	if len(queryWords) == 0:
 		print('QUERY SENTENCE HAS NO WORDS')
 		return ''
 		
-	_, bigramCost = wc.fetchCosts()
 	possibleSwaps = util.synonyms
 
 	ucs = util.UniformCostSearch(verbose=1)
-	ucs.solve(PunnificationProblem(queryTheme, querySentence, bigramCost, possibleSwaps))
+	ucs.solve(PunnificationProblem(queryTheme, queryWords, bigramCost, util.wup_similarity, possibleSwaps))
 
 	if (ucs.actions == None):
 		print("NO SUBSTITUTIONS FOUND")
-		return querySentence
+		return queryWords
 
 	return ' '.join(ucs.actions)
 
