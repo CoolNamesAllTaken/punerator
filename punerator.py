@@ -3,10 +3,9 @@ from nltk.corpus import wordnet as wn
 #	import nltk
 #	nltk.download()
 
-import shell
-import util
-import collections
-import copy
+import wordCostUtil as wc
+
+import shell, util, collections, copy
 
 '''
 TODO:
@@ -22,7 +21,10 @@ def subs(sentence):
 	for word in words:
 		print("word={}, substitutions={}".format(word, util.synonyms(word)))
 
-def pun(theme, sentence):
+############################################################
+# Dumb baseline that probabaly works
+
+def punnify_baseline(theme, sentence):
 	"""Punnify a sentence using a particular theme
 	Inputs:
 		theme - string representing pun theme
@@ -40,10 +42,9 @@ def pun(theme, sentence):
 	def compare_words(word, theme_synset):
 		word_synset = wn.synsets(word)[0] # TODO: make not first synset
 		print("word={} score={}".format(word, word_synset.wup_similarity(theme_synset)))
-		return word_synset.wup_similarity(theme_synset)
-	swaps.sort(key=lambda swap: compare_words(swap[0], theme_synset), reverse=True)
+		return word_synset.wup_similarity(theme_synset) # score is wu-palmer similarity between swapped word and theme word
+	swaps.sort(key=lambda swap: compare_words(swap[0], theme_synset), reverse=True) # sort swaps by similarity of swapped word to theme word
 	print("sorted swaps={}".format(swaps))
-
 
 	best_swaps = swaps[1:5]
 	for curr_swap in best_swaps:
@@ -51,7 +52,58 @@ def pun(theme, sentence):
 		words_copy[curr_swap[1]] = curr_swap[0]
 		print(' '.join(words_copy))
 
-	
+############################################################
+# Actual attempt at AI
+
+class PunnificationProblem(util.SearchProblem):
+	def __init__(self, queryTheme, querySentence, bigramCost, possibleSwaps):
+		self.queryTheme = queryTheme
+		self.querySentence = querySentence
+		self.bigramCost = bigramCost
+		self.possibleSwaps = possibleSwaps
+
+	def startState(self):
+		return (wc.SENTENCE_BEGIN, 0)
+	def isEnd(self, state):
+		return state[1] >= len(self.querySentence)
+
+	def succAndCost(self, state):
+		edges = []
+		# print("state={}".format(state[0]))
+		swaps = self.possibleSwaps(self.querySentence[state[1]])
+		# print("  possibleFills={}".format(fills))
+		if (len(swaps) == 0): # no valid swaps, just append current string and move on
+			swap = self.querySentence[state[1]]
+			action = swap
+			newState = (swap, state[1] + 1)
+			cost = self.bigramCost(state[0], newState[0])
+			edges.append((action, newState, cost))
+			return edges
+		for swap in swaps: # found valid fills, step through them and create edges
+			action = swap
+			newState = (swap, state[1] + 1)
+			cost = self.bigramCost(state[0], newState[0])
+			# print("    action={} newState={} cost={}".format(action, newState, cost))
+			edges.append((action, newState, cost))
+
+		return edges
+
+def punnify_ai(queryTheme, querySentence):
+	if len(querySentence) == 0:
+		print('QUERY SENTENCE HAS NO WORDS')
+		return ''
+		
+	_, bigramCost = wc.fetchCosts()
+	possibleSwaps = util.synonyms
+
+	ucs = util.UniformCostSearch(verbose=1)
+	ucs.solve(PunnificationProblem(queryTheme, querySentence, bigramCost, possibleSwaps))
+
+	if (ucs.actions == None):
+		print("NO SUBSTITUTIONS FOUND")
+		return querySentence
+
+	return ' '.join(ucs.actions)
 
 if __name__ == '__main__':
 	shell.main()
