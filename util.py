@@ -18,6 +18,25 @@ def synonyms(word):
 	print("word={} synonyms={}".format(word, synonyms))
 	return set(synonyms)
 
+def syn_hyperhypo(word):
+	"""
+	Returns a set of related, on-theme words by adding the lemmas, hypernyms, and hyponyms
+	for each definition of the word.
+	"""
+	related = []
+	syns = wn.synsets(word)
+	for synset in syns:
+		for lemma in synset.lemmas():
+			related.append(lemma.name())
+		for hypernym in synset.hypernyms():
+			related.append(hypernym.name())
+		for hyponym in synset.hyponyms():
+			related.append(hyponyms.name())
+		for holonym in synset.member_holonyms():
+			related.append(holonym.name())
+	print("word={} related={}".format(word, related))
+	return set(related)
+
 def wup_similarity(word1, word2):
 	word1_synsets = wn.synsets(word1) # TODO: figure out which synset to use
 	word2_synsets = wn.synsets(word2)

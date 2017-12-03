@@ -116,7 +116,22 @@ def punnify_meaning(queryTheme, querySentence, bigramCost):
 		print('QUERY SENTENCE HAS NO WORDS')
 		return ''
 
-	print('punnify_meaning not implemented! queryTheme={} querySentence={}'.format(queryTheme, querySentence))
+	possibleSwaps = util.synonyms
+	def swapCost(queryTheme, queryWord, swap):
+		if queryWord == swap:
+			#de-incentivize a large number of swaps
+			swapPenality = 1
+			if queryWord != swap: swapPenality = 5
+		return math.log(bigramCost(queryWord, swap)**2 * util.wup_similarity(queryTheme, swap)) * swapPenality
+
+	ucs = util.UniformCostSearch(verbose=1)
+	ucs.solve(PunnificationProblem(queryTheme, queryWords, swapCost, possibleSwaps))
+
+	if (ucs.actions == None):
+		print("NO SUBSTITUTIONS FOUND")
+		return queryWords
+
+	return ' '.join(ucs.actions)
 
 def punnify_sound(queryTheme, querySentence, bigramCost):
 	queryWords = querySentence.split()
