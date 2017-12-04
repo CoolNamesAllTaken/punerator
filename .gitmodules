@@ -1,0 +1,3 @@
+[submodule "thesaurus_api"]
+	path = thesaurus_api
+	url = https://github.com/Manwholikespie/thesaurus-api

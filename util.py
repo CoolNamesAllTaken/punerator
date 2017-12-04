@@ -25,21 +25,28 @@ def syn_hyperhypo(word):
 	for each definition of the word.
 	"""
 	related = set()
-	# syns = wn.synsets(word)
-	# for synset in syns:
-	# 	print("word={} lemmas={}".format(word, synset.lemmas()))
-	# 	print("word={} hypernyms={}".format(word, synset.hypernyms()))
-	# 	print("word={} hyponyms={}".format(word, synset.hyponyms()))
-	# 	print("word={} member_holonyms={}".format(word, synset.member_holonyms()))
-	# 	for lemma in synset.lemmas():
-	# 		related.add(lemma.name())
-	# 	for hypernym in synset.hypernyms():
-	# 		related.add(hypernym.name())
-	# 	for hyponym in synset.hyponyms():
-	# 		related.add(hyponym.name())
-	# 	for holonym in synset.member_holonyms():
-	# 		related.add(holonym.name())
+	syns = wn.synsets(word)
+	for synset in syns:
+		print("word={} lemmas={}".format(word, synset.lemmas()))
+		print("word={} hypernyms={}".format(word, synset.hypernyms()))
+		print("word={} hyponyms={}".format(word, synset.hyponyms()))
+		print("word={} member_holonyms={}".format(word, synset.member_holonyms()))
+		for lemma in synset.lemmas():
+			related.add(lemma.name())
+		for hypernym in synset.hypernyms():
+			related.add(hypernym.name())
+		for hyponym in synset.hyponyms():
+			related.add(hyponym.name())
+		for holonym in synset.member_holonyms():
+			related.add(holonym.name())
 
+	return related
+
+def syn_thesaurus(word):
+	"""
+	Returns a set of synonyms pulled from the Thesaurus.com API
+	"""
+	related = set()
 	for synset in Word(word).synonyms('all'):
 		for lemma in synset:
 			related.add(lemma)

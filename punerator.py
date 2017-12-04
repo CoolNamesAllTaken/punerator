@@ -19,7 +19,7 @@ def subs(sentence):
 	words = sentence.split()
 	print(words)
 	for word in words:
-		print("word={}, substitutions={}".format(word, util.syn_hyperhypo(word)))
+		print("word={}, substitutions={}".format(word, util.syn_thesaurus(word)))
 
 ############################################################
 # Dumb baseline that probabaly works
