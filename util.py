@@ -3,7 +3,7 @@ from nltk.corpus import wordnet as wn
 #	import nltk
 #	nltk.download()
 
-from thesaurus_api.thesaurus import Word
+from thesaurus_api.thesaurus import Word # https://github.com/Manwholikespie/thesaurus-api requires requests, beautifulsoup4
 import heapq, collections, re, sys, time, os, random # CS221 library imports
 
 

@@ -1,10 +1,6 @@
 import dill as pickle
-# import time
 import collections
 import math
-
-UNIGRAM_FILENAME = 'uni'
-BIGRAM_FILENAME = 'bi'
 
 SENTENCE_BEGIN = '-BEGIN-'
 
@@ -56,14 +52,14 @@ def calculateCosts(path):
 
 	return unigramCost, bigramModel
 
-def createCosts(path):
-	unigramCost, bigramCost = calculateCosts(path)
-	pickle.dump(unigramCost, open(UNIGRAM_FILENAME, "wb"))
-	pickle.dump(bigramCost, open(BIGRAM_FILENAME, "wb"))
+def trainCosts(corpusPath, unigramPath, bigramPath):
+	unigramCost, bigramCost = calculateCosts(corpusPath)
+	pickle.dump(unigramCost, open(unigramPath, "wb"))
+	pickle.dump(bigramCost, open(bigramPath, "wb"))
 
-def fetchCosts():
-	unigramCost = pickle.load(open(UNIGRAM_FILENAME, "rb"))
-	bigramCost = pickle.load(open(BIGRAM_FILENAME, "rb"))
+def loadCosts(unigramPath, bigramPath):
+	unigramCost = pickle.load(open(unigramPath, "rb"))
+	bigramCost = pickle.load(open(bigramPath, "rb"))
 	return unigramCost, bigramCost
 #*********************************************************************************
 #Usage Example

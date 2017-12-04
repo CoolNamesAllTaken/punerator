@@ -3,9 +3,20 @@ import sys
 
 import punerator
 import wordCostUtil as wc
+import gensimUtil as gs
 
-CORPUS_PATH = "EnglishText.txt" # corpus for training bigram and unigram cost functions
-_, BIGRAM_COST = wc.fetchCosts()
+# corpus for training bigram and unigram cost functions (used to re-train unigram, bigram cost)
+CORPUS_PATH = "corpora/EnglishText.txt"
+
+# load pre-trained unigram and bigram cost functions (used for sentence fluency)
+print('Loading Bigram Cost model...')
+UNIGRAM_PATH = 'models/uni'
+BIGRAM_PATH = 'models/bi'
+_, BIGRAM_COST = wc.loadCosts(UNIGRAM_PATH, BIGRAM_PATH) # (UNIGRAM_PATH, BIGRAM_PATH)
+
+# load pre-trained word vector model in Google word2vec binary format (used for word similarity)
+print('Loading word2vec model...')
+WORD2VEC_MODEL = gs.loadWord2VecModel('./models/GoogleNews-vectors-negative300.bin') # (WORD2VEC_MODEL_PATH)
 
 def parseArgs():
 	p = argparse.ArgumentParser()
@@ -13,6 +24,15 @@ def parseArgs():
 	return p.parse_args()
 
 def parse_pun_cmd(cmd, line):
+	"""
+	Parses a pun command with a line in the form <theme> <sentence>
+	Inputs:
+		cmd - punnification command
+		line - line to punnify, in the form <theme> <sentence>
+	Outputs:
+		theme -	theme word
+		sentence - sentence to punnify
+	"""
 	if (len(line) < 2):
 		print('Not enough inputs: Expected input of the form \'{} <theme> <sentence>\''.format(cmd))
 		return None, None
@@ -45,6 +65,7 @@ def repl(command=None):
 			print('Commands:')
 			print('\n'.join(a + '\t' + b for a, b in [
 				('subs\t', 'List synonyms for each word in string'),
+				('sim\t', 'Calculate similarity between two words'),
 				('pun_bs\t', 'Punnifies a string using the baseline algorithm'),
 				('pun_ai\t', 'Punnifies a string using a sooper dooper fancy AI algorithm (AI baseline)'),
 				('pun_meaning', 'Creates meaning puns (uses synonyms, hypernyms, hyponyms)'),
@@ -55,7 +76,11 @@ def repl(command=None):
 			print('Enter empty line to quit')
 		elif cmd == 'subs':
 			print('Finding substitutions for {}'.format(line))
-			punerator.subs(line)
+			punerator.substitutions(line)
+		elif cmd == 'sim':
+			words = line.split(None, 1)
+			print('Finding similarity between {} and {}'.format(words[0], words[1]))
+			punerator.similarity(words[0], words[1], WORD2VEC_MODEL)
 		elif cmd == 'pun_bs':
 			theme, sentence = parse_pun_cmd(cmd, line)
 			if not theme and not sentence: continue # not enough inputs
@@ -63,29 +88,24 @@ def repl(command=None):
 		elif cmd == 'pun_ai':
 			theme, sentence = parse_pun_cmd(cmd, line)
 			if not theme and not sentence: continue # not enough inputs
-			punerator.punnify_ai(theme, sentence, BIGRAM_COST)
+			punerator.punnify_ai(theme, sentence, BIGRAM_COST, WORD2VEC_MODEL)
 		elif cmd == 'pun_meaning':
 			theme, sentence = parse_pun_cmd(cmd, line)
 			if not theme and not sentence: continue # not enough inputs
-			punerator.punnify_meaning(theme, sentence, BIGRAM_COST)
+			punerator.punnify_meaning(theme, sentence, BIGRAM_COST, WORD2VEC_MODEL)
 		elif cmd == 'pun_sound':
 			theme, sentence = parse_pun_cmd(cmd, line)
 			if not theme and not sentence: continue # not enough inputs
-			punerator.punnify_meaning(theme, sentence, BIGRAM_COST)
+			punerator.punnify_meaning(theme, sentence, BIGRAM_COST, WORD2VEC_MODEL)
 		elif cmd == 'train':
 			print('Training bigram/unigram cost functions on corpus...')
-			wc.createCosts(CORPUS_PATH)
+			wc.createCosts(CORPUS_PATH, UNIGRAM_PATH, BIGRAM_PATH)
 			print('Done!')
 		else:
 			print('Unrecognized command:', cmd)
 
 def main():
 	args = parseArgs()
-
-	# print("Fetching Bigram Cost...")
-	# _, BIGRAM_COST = wc.fetchCosts()
-	# print("bigramCost={}".format(BIGRAM_COST))
-	# print("Done!")
 
 	repl(command=args.command)
 

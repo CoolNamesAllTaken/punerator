@@ -15,15 +15,23 @@ TODO:
 - heterophones? 
 '''
 
-def subs(sentence):
+def substitutions(sentence):
 	"""
 	Lists the possible substitutions for each word in a sentence.  A good way to test the thesaurus.
 	"""
 	words = sentence.split()
 	print(words)
 	for word in words:
-		print("word={}, substitutions={}".format(word, util.syn_thesaurus(word)))
+		print('word={}, substitutions={}'.format(word, util.syn_thesaurus(word)))
 
+def similarity(word1, word2, word2vecModel):
+	"""
+	Calculates the similarity between two words.  A good way to test the word2vec model.
+	"""
+	if word1 not in word2vecModel.wv.vocab or word2 not in word2vecModel.wv.vocab:
+		print('Word not contained in word vector model') # word not contained in word vector model, prune
+		return
+	print('word1={}, word2={}, similarity={}'.format(word1, word2, word2vecModel.similarity(word1, word2)))
 ############################################################
 # Dumb baseline that probabaly works
 
@@ -75,7 +83,7 @@ class PunnificationProblem(util.SearchProblem):
 		edges = []
 		# print("state={}".format(state[0]))
 		swaps = self.possibleSwaps(self.queryWords[state[1]])
-		print("  possibleSwaps={}".format(swaps))
+		print("  word={} possibleSwaps={}".format(self.queryWords[state[1]], swaps))
 		if (len(swaps) == 0): # no valid swaps, just append current string and move on
 			swap = self.queryWords[state[1]]
 			action = swap
@@ -92,27 +100,38 @@ class PunnificationProblem(util.SearchProblem):
 
 		return edges
 
-def punnify_ai(queryTheme, querySentence, bigramCost):
+def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel):
 	queryWords = querySentence.split()
 
+	for word in queryWords:
+		if word not in word2vecModel.wv.vocab:
+			print('ERROR: query sentence contains words not contained in word2vec model.')
+			return ''
+
 	if len(queryWords) == 0:
-		print('QUERY SENTENCE HAS NO WORDS')
+		print('ERROR: query sentence has no words.')
 		return ''
 		
-	possibleSwaps = util.synonyms
+	possibleSwaps = util.syn_thesaurus
 	def swapCost(queryTheme, queryWord, swap):
-		return math.log(bigramCost(queryWord, swap)**2 * util.wup_similarity(queryTheme, swap))
+		# return math.log(bigramCost(queryWord, swap)**2 * word2vecModel.similarity(queryTheme, swap))
+		if swap not in word2vecModel.wv.vocab:
+			return float('inf') # word not contained in word vector model, prune
+		similarity = word2vecModel.similarity(queryTheme, swap) # -1 to 1, 1 is most similar
+		if similarity < 0:
+			return float('inf') # word has an opposite meaning from theme, prune
+		return bigramCost(queryWord, swap) / similarity
 
 	ucs = util.UniformCostSearch(verbose=1)
 	ucs.solve(PunnificationProblem(queryTheme, queryWords, swapCost, possibleSwaps))
 
 	if (ucs.actions == None):
-		print("NO SUBSTITUTIONS FOUND")
+		print('ERROR: no substitutions found.')
 		return queryWords
 
 	return ' '.join(ucs.actions)
 
-def punnify_meaning(queryTheme, querySentence, bigramCost):
+def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 	queryWords = querySentence.split()
 
 	if len(queryWords) == 0:
@@ -137,7 +156,7 @@ def punnify_meaning(queryTheme, querySentence, bigramCost):
 
 	return ' '.join(ucs.actions)
 
-def punnify_sound(queryTheme, querySentence, bigramCost):
+def punnify_sound(queryTheme, querySentence, bigramCost, word2vecModel):
 	queryWords = querySentence.split()
 
 	if len(queryWords) == 0:

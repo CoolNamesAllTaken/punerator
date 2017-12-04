@@ -1,1 +1,2 @@
-DAMN IT JOHN
+##Word2Vec Model
+Add the GoogleNews pre-trained word2vec binary to the models/ folder.  The file can be found here: https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit?usp=sharing  Make sure to uncompress the file before adding it to the folder (extension should be .bin, not .bin.gz)
