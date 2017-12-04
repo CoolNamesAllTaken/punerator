@@ -16,6 +16,9 @@ TODO:
 '''
 
 def subs(sentence):
+	"""
+	Lists the possible substitutions for each word in a sentence.  A good way to test the thesaurus.
+	"""
 	words = sentence.split()
 	print(words)
 	for word in words:
