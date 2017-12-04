@@ -3,6 +3,7 @@ from nltk.corpus import wordnet as wn
 #	import nltk
 #	nltk.download()
 
+from thesaurus_api.thesaurus import Word
 import heapq, collections, re, sys, time, os, random # CS221 library imports
 
 
@@ -23,19 +24,27 @@ def syn_hyperhypo(word):
 	Returns a set of related, on-theme words by adding the lemmas, hypernyms, and hyponyms
 	for each definition of the word.
 	"""
-	related = []
-	syns = wn.synsets(word)
-	for synset in syns:
-		for lemma in synset.lemmas():
-			related.append(lemma.name())
-		for hypernym in synset.hypernyms():
-			related.append(hypernym.name())
-		for hyponym in synset.hyponyms():
-			related.append(hyponyms.name())
-		for holonym in synset.member_holonyms():
-			related.append(holonym.name())
-	print("word={} related={}".format(word, related))
-	return set(related)
+	related = set()
+	# syns = wn.synsets(word)
+	# for synset in syns:
+	# 	print("word={} lemmas={}".format(word, synset.lemmas()))
+	# 	print("word={} hypernyms={}".format(word, synset.hypernyms()))
+	# 	print("word={} hyponyms={}".format(word, synset.hyponyms()))
+	# 	print("word={} member_holonyms={}".format(word, synset.member_holonyms()))
+	# 	for lemma in synset.lemmas():
+	# 		related.add(lemma.name())
+	# 	for hypernym in synset.hypernyms():
+	# 		related.add(hypernym.name())
+	# 	for hyponym in synset.hyponyms():
+	# 		related.add(hyponym.name())
+	# 	for holonym in synset.member_holonyms():
+	# 		related.add(holonym.name())
+
+	for synset in Word(word).synonyms('all'):
+		for lemma in synset:
+			related.add(lemma)
+			# print("word={} related={}".format(word, related))
+	return related
 
 def wup_similarity(word1, word2):
 	word1_synsets = wn.synsets(word1) # TODO: figure out which synset to use

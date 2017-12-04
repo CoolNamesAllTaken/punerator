@@ -19,7 +19,7 @@ def subs(sentence):
 	words = sentence.split()
 	print(words)
 	for word in words:
-		print("word={}, substitutions={}".format(word, util.synonyms(word)))
+		print("word={}, substitutions={}".format(word, util.syn_hyperhypo(word)))
 
 ############################################################
 # Dumb baseline that probabaly works
@@ -72,7 +72,7 @@ class PunnificationProblem(util.SearchProblem):
 		edges = []
 		# print("state={}".format(state[0]))
 		swaps = self.possibleSwaps(self.queryWords[state[1]])
-		# print("  possibleFills={}".format(fills))
+		print("  possibleSwaps={}".format(swaps))
 		if (len(swaps) == 0): # no valid swaps, just append current string and move on
 			swap = self.queryWords[state[1]]
 			action = swap
@@ -116,13 +116,14 @@ def punnify_meaning(queryTheme, querySentence, bigramCost):
 		print('QUERY SENTENCE HAS NO WORDS')
 		return ''
 
-	possibleSwaps = util.synonyms
+	possibleSwaps = util.syn_hyperhypo
 	def swapCost(queryTheme, queryWord, swap):
+		swapPenality = 1
 		if queryWord == swap:
 			#de-incentivize a large number of swaps
-			swapPenality = 1
-			if queryWord != swap: swapPenality = 5
-		return math.log(bigramCost(queryWord, swap)**2 * util.wup_similarity(queryTheme, swap)) * swapPenality
+			if queryWord != swap: swapPenality = 10
+		# return math.log(bigramCost(queryWord, swap)**2 * util.wup_similarity(queryTheme, swap)) * swapPenality
+		return util.wup_similarity(queryTheme, swap)
 
 	ucs = util.UniformCostSearch(verbose=1)
 	ucs.solve(PunnificationProblem(queryTheme, queryWords, swapCost, possibleSwaps))
