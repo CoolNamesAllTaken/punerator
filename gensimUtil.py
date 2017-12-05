@@ -1,6 +1,8 @@
 import gensim
 from gensim import corpora
 
+from nltk.corpus import stopwords
+
 # set up logging
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
