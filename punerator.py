@@ -1,10 +1,11 @@
 from nltk.corpus import wordnet as wn
+from nltk.corpus import stopwords
 # if the above command doesn't work, run:
 #	import nltk
 #	nltk.download()
+#	nltk.download(stopwords
 
 import wordCostUtil as wc
-
 import shell, util, collections, copy, math
 
 '''
@@ -104,8 +105,8 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel):
 	queryWords = querySentence.split()
 
 	for word in queryWords:
-		if word not in word2vecModel.wv.vocab:
-			print('ERROR: query sentence contains words not contained in word2vec model.')
+		if word not in word2vecModel.wv.vocab and word not in stopwords.words('english'):
+			print('ERROR: query sentence contains non-stopwords that are not contained in word2vec model.')
 			return ''
 
 	if len(queryWords) == 0:
@@ -137,24 +138,27 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 	queryWords = querySentence.split()
 
 	for word in queryWords:
-		if word not in word2vecModel.wv.vocab:
-			print('ERROR: query sentence contains words not contained in word2vec model.')
+		if word not in word2vecModel.wv.vocab and word not in stopwords.words('english'):
+			print('ERROR: query sentence contains non-stopwords that are not contained in word2vec model.')
 			return ''
 
 	if len(queryWords) == 0:
 		print('ERROR: query sentence has no words.')
 		return ''
 
-	possibleSwaps = util.syn_thesaurus
-	# possibleSwaps = util.synonyms
+	def possibleSwaps(queryWord):
+		if queryWord in stopwords.words('english'):
+			return [queryWord] # word is a stopword (not interesting), no valid synonyms
+		else:
+			return util.syn_thesaurus(queryWord) # word can be replaced with synonyms
 
 	back = util.BacktrackingSearch()
 	back.solve(queryWords, possibleSwaps, bigramCost)
 
-	print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-	for path in back.solutions:
-		print(path)
-	print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+	# print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+	# for path in back.solutions:
+	# 	print(path)
+	# print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
 	
 	#now take the non-infinite solutions and check pun cost and swap cost
 	def w2vCost(queryWord, swapWord):
@@ -170,7 +174,7 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 		phrase, cost = lineTuple
 		words = phrase.split(' ')
 		words = words[1:] #bc the first character is a ' ' in the phrase, so '' as first word
-		print("words: {}".format(words))
+		#print("words: {}".format(words))
 		similarityCost = 0
 		numSwaps = 1.0 #bc multiplying to default value is 1 not 0
 		infinity = False
@@ -178,11 +182,11 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 		for i in range(lenPhrase):
 			queryWord = queryWords[i]
 			swapWord = words[i]
+
+			if swapWord in stopwords.words('english'): continue
+
 			if queryWord != swapWord: 
 				numSwaps += 1
-			else:
-				print("what")
-			print("qWord: {}, cWord: {}".format(queryWord, swapWord))
 			simCost = w2vCost(queryWord, swapWord)
 			if simCost == float('inf'):
 				infinity = True
@@ -191,7 +195,7 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 		
 		updatedTuple = [phrase,cost]
 
-		print("phrase: {}, query: {}".format(phrase.strip(), queryWords))
+		#print("phrase: {}, query: {}".format(phrase.strip(), queryWords))
 
 		if infinity or (words == queryWords): updatedTuple[1] = float('inf')
 		else: updatedTuple[1] *= similarityCost * numSwaps

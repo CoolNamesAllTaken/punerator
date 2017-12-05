@@ -194,7 +194,7 @@ class BacktrackingSearch():
 		Note: sorts in reverse order and sets the highest cost element to be the first element of solutions.
 		"""
 		self.solutions.sort(key=lambda x: x[1], reverse=True)
-		maximum_cost = self.solutions[1][1]
+		maximum_cost = self.solutions[0][1]
 		self.solutions = [x for x in self.solutions if x[1] != maximum_cost]
 
 	def solve(self, fullPhrase, possibleSwaps, bigramCost):
@@ -233,6 +233,6 @@ class BacktrackingSearch():
 
 		print("NUM RECURSIVE ITERATIONS: {}".format(self.numIterations))
 
-		self.pruneSolution()
+		#self.pruneSolution()
 
 		
