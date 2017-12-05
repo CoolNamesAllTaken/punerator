@@ -51,7 +51,7 @@ def syn_thesaurus(word):
 		for lemma in synset:
 			related.add(lemma)
 			# print("word={} related={}".format(word, related))
-	related.add(word)
+	related.add(word) # add in the original word
 	return related
 
 def wup_similarity(word1, word2):
@@ -74,6 +74,36 @@ def synset_names(synset):
 	for lemma in synset.lemmas():
 		names.append(lemma.name())
 	return set(names)
+
+############################################################
+# Data structure for supporting uniform cost search. (Stolen from CS221)
+class PriorityQueue:
+	def  __init__(self):
+		self.DONE = -100000
+		self.heap = []
+		self.priorities = {}  # Map from state to priority
+
+	# Insert |state| into the heap with priority |newPriority| if
+	# |state| isn't in the heap or |newPriority| is smaller than the existing
+	# priority.
+	# Return whether the priority queue was updated.
+	def update(self, state, newPriority):
+		oldPriority = self.priorities.get(state)
+		if oldPriority == None or newPriority < oldPriority:
+			self.priorities[state] = newPriority
+			heapq.heappush(self.heap, (newPriority, state))
+			return True
+		return False
+
+	# Returns (state with minimum priority, priority)
+	# or (None, None) if the priority queue is empty.
+	def removeMin(self):
+		while len(self.heap) > 0:
+			priority, state = heapq.heappop(self.heap)
+			if self.priorities[state] == self.DONE: continue  # Outdated priority, skip
+			self.priorities[state] = self.DONE
+			return (state, priority)
+		return (None, None) # Nothing left...
 
 ############################################################
 # Abstract interfaces for search problems and search algorithms. (Stolen from CS221)
@@ -155,37 +185,9 @@ class UniformCostSearch(SearchAlgorithm):
 		if self.verbose >= 1:
 			print "No path found"
 
-# Data structure for supporting uniform cost search. (Stolen from CS221)
-class PriorityQueue:
-	def  __init__(self):
-		self.DONE = -100000
-		self.heap = []
-		self.priorities = {}  # Map from state to priority
-
-	# Insert |state| into the heap with priority |newPriority| if
-	# |state| isn't in the heap or |newPriority| is smaller than the existing
-	# priority.
-	# Return whether the priority queue was updated.
-	def update(self, state, newPriority):
-		oldPriority = self.priorities.get(state)
-		if oldPriority == None or newPriority < oldPriority:
-			self.priorities[state] = newPriority
-			heapq.heappush(self.heap, (newPriority, state))
-			return True
-		return False
-
-	# Returns (state with minimum priority, priority)
-	# or (None, None) if the priority queue is empty.
-	def removeMin(self):
-		while len(self.heap) > 0:
-			priority, state = heapq.heappop(self.heap)
-			if self.priorities[state] == self.DONE: continue  # Outdated priority, skip
-			self.priorities[state] = self.DONE
-			return (state, priority)
-		return (None, None) # Nothing left...
-
-class BacktrackingSearch():
-	def __init__(self):
+class BacktrackingSearch(SearchAlgorithm):
+	def __init__(self, verbose=0):
+		self.verbose = verbose
 		self.solutions = []
 
 	def pruneSolution(self):
@@ -197,42 +199,29 @@ class BacktrackingSearch():
 		maximum_cost = self.solutions[0][1]
 		self.solutions = [x for x in self.solutions if x[1] != maximum_cost]
 
-	def solve(self, fullPhrase, possibleSwaps, bigramCost):
+	def solve(self, problem): # fullPhrase, possibleSwaps, bigramCost
+		# TODO: re-implement
 		costCache = collections.defaultdict(float) #{(prevWord, subWord) : bigramCost(prevWord, subWord)}
-		
-		self.phrase = fullPhrase
-		self.lenphrase = len(fullPhrase)
-		self.substitutions = possibleSwaps
-		self.bigramCost = bigramCost
 
 		self.numIterations = 0
-		
-		def backtrack(totalPath, totalCost, prevWord, index):
+
+		def backtrack(state, path, totalCost):
 			self.numIterations += 1
-			if index == self.lenphrase:
-				self.solutions.append((totalPath, totalCost))
-			else:
-				currWord = self.phrase[index]
-				for subWord in self.substitutions(currWord):
-					newPath = totalPath+" "+subWord
-					incrimentalCost = 0
-					if (prevWord, subWord) in costCache: 
-						incrimentalCost = costCache[(prevWord, subWord)]
-					else:
-						incrimentalCost = self.bigramCost(prevWord, subWord)
-						costCache[(prevWord, subWord)] = incrimentalCost
-					#print("prevWord: {}, curWord: {}, cost: {}".format(prevWord, subWord, incrimentalCost))
-					
-					#still working on pruning during iteration
-					# if incrimentalCost >= BIGRAM_MAX: #index != 0 and 
-					# 	return
-					newCost = totalCost+incrimentalCost
-					backtrack(newPath, newCost, currWord, index+1)
+			if problem.isEnd(state): # found solution
+				self.solutions.append((path, totalCost))
+			else: # extend path
+				for action, newState, actionCost in problem.succAndCost(state):
+					newPath = list(path) # copy old path (pass by value)
+					newPath.append(action) # extend path
+					newTotalCost = totalCost + actionCost
+					backtrack(newState, newPath, newTotalCost)
+			if self.verbose: print("numIterations={}".format(numIterations))
 
-		backtrack("", 0, '-BEGIN-', 0)
+		backtrack(problem.startState(), [], 0)
+		self.solutions.sort(key=lambda x: x[1]) # sort solutions with lowest cost first
+		minCostSolution = self.solutions[0]
 
-		print("NUM RECURSIVE ITERATIONS: {}".format(self.numIterations))
-
-		#self.pruneSolution()
-
-		
+		# set SearchAlgorithm things
+		self.actions = minCostSolution[0]
+		self.totalCost = minCostSolution[1]
+		self.numStatesExplored = self.numIterations

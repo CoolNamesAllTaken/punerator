@@ -81,6 +81,10 @@ def repl(command=None):
 			words = line.split(None, 1)
 			print('Finding similarity between {} and {}'.format(words[0], words[1]))
 			punerator.similarity(words[0], words[1], WORD2VEC_MODEL)
+		elif cmd == 'bgc':
+			words = line.split(None, 1)
+			print("Finding bigram cost for '{} {}'".format(words[0], words[1]))
+			print(BIGRAM_COST(words[0], words[1]))
 		elif cmd == 'pun_bs':
 			theme, sentence = parse_pun_cmd(cmd, line)
 			if not theme and not sentence: continue # not enough inputs

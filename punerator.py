@@ -68,11 +68,11 @@ def punnify_baseline(theme, sentence):
 # Actual attempt at AI
 
 class PunnificationProblem(util.SearchProblem):
-	def __init__(self, queryTheme, queryWords, swapCost, possibleSwaps):
+	def __init__(self, queryTheme, queryWords, costFunc, possibleSwaps):
 		# print("New PunnificationProblem: queryWords={} bigramCost={}".format(queryWords, bigramCost))
 		self.queryTheme = queryTheme
 		self.queryWords = queryWords
-		self.swapCost = swapCost
+		self.costFunc = costFunc
 		self.possibleSwaps = possibleSwaps
 
 	def startState(self):
@@ -89,16 +89,15 @@ class PunnificationProblem(util.SearchProblem):
 			swap = self.queryWords[state[1]]
 			action = swap
 			newState = (swap, state[1] + 1)
-			cost = self.swapCost(self.queryTheme, state[0], swap)
+			cost = self.costFunc(self.queryTheme, state[0], swap)
 			edges.append((action, newState, cost))
 			return edges
 		for swap in swaps: # found valid fills, step through them and create edges
 			action = swap
 			newState = (swap, state[1] + 1)
-			cost = self.swapCost(self.queryTheme, state[0], swap)
+			cost = self.costFunc(self.queryTheme, state[0], swap)
 			# print("    action={} newState={} cost={}".format(action, newState, cost))
 			edges.append((action, newState, cost))
-
 		return edges
 
 def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel):
@@ -113,24 +112,32 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel):
 		print('ERROR: query sentence has no words.')
 		return ''
 		
-	possibleSwaps = util.syn_thesaurus
-	def swapCost(queryTheme, queryWord, swap):
-		# return math.log(bigramCost(queryWord, swap)**2 * word2vecModel.similarity(queryTheme, swap))
-		if swap not in word2vecModel.wv.vocab:
-			return float('inf') # word not contained in word vector model, prune
+	def possibleSwaps(queryWord):
+		if queryWord in stopwords.words('english'):
+			return [queryWord] # word is a stopword (not interesting), no valid synonyms
+		else:
+			return util.syn_thesaurus(queryWord) # word can be replaced with synonyms
+	def costFunc(queryTheme, prevWord, swap):
+		if swap not in word2vecModel.wv.vocab: # word not in word vector model
+			return float('inf') # prune
 		similarity = word2vecModel.similarity(queryTheme, swap) # -1 to 1, 1 is most similar
 		if similarity < 0:
 			return float('inf') # word has an opposite meaning from theme, prune
-		return bigramCost(queryWord, swap) / similarity
+		return bigramCost(prevWord, swap) / similarity
 
-	ucs = util.UniformCostSearch(verbose=1)
-	ucs.solve(PunnificationProblem(queryTheme, queryWords, swapCost, possibleSwaps))
+	back = util.BacktrackingSearch()
+	back.solve(PunnificationProblem(queryTheme, queryWords, costFunc, possibleSwaps))
 
-	if (ucs.actions == None):
+	# ucs = util.UniformCostSearch()
+	# ucs.solve(PunnificationProblem(queryTheme, queryWords, costFunc, possibleSwaps))
+
+	if (back.actions == None):
 		print('ERROR: no substitutions found.')
 		return queryWords
 
-	return ' '.join(ucs.actions)
+	print(' '.join(back.actions))
+
+	return ' '.join(back.actions)
 
 def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 	BIGRAM_MAX = 13 #experimentaly defined inf value for bigram missing word from testing
@@ -208,7 +215,7 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 	print("NEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEW")
 	
 
-	# def swapCost(queryTheme, queryWord, swap):
+	# def costFunc(queryTheme, queryWord, swap):
 	# 	swapPenality = 1
 	# 	if queryWord == swap:
 	# 		#de-incentivize a large number of swaps
@@ -217,7 +224,7 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 	# 	return util.wup_similarity(queryTheme, swap)
 
 	# ucs = util.UniformCostSearch(verbose=1)
-	# ucs.solve(PunnificationProblem(queryTheme, queryWords, swapCost, possibleSwaps))
+	# ucs.solve(PunnificationProblem(queryTheme, queryWords, costFunc, possibleSwaps))
 
 	# if (ucs.actions == None):
 	# 	print("NO SUBSTITUTIONS FOUND")
