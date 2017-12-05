@@ -132,6 +132,8 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel):
 	return ' '.join(ucs.actions)
 
 def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
+	BIGRAM_MAX = 13 #experimentaly defined inf value for bigram missing word from testing
+
 	queryWords = querySentence.split()
 
 	for word in queryWords:
@@ -143,8 +145,8 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 		print('ERROR: query sentence has no words.')
 		return ''
 
-	# possibleSwaps = util.syn_thesaurus
-	possibleSwaps = util.synonyms
+	possibleSwaps = util.syn_thesaurus
+	# possibleSwaps = util.synonyms
 	solutions = []
 	def backtrack(total_path, total_cost, prev_word, phrase, substitutions, index):
 		if index == len(phrase):
@@ -152,15 +154,22 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 		else:
 			curr_word = phrase[index]
 			for sub_word in substitutions(curr_word):
-				new_path = total_path+" "+sub_word
-				new_cost = total_cost+bigramCost(prev_word, sub_word)
+				new_path = total_path+" "+sub_word	
+				incrimental_cost = bigramCost(prev_word, sub_word)
+				# if index != 0 and incrimental_cost >= BIGRAM_MAX:
+				# 	return
+				new_cost = total_cost+incrimental_cost
 				backtrack(new_path, new_cost, curr_word, phrase, substitutions, index+1)
 	backtrack("", 0, '-BEGIN-', queryWords, possibleSwaps, 0)
 
+	solutions.sort(key=lambda x: x[1])
+	# maximum_cost = solutions[-1][1]
+	# solutions = [x for x in solutions if x[1] != maximum_cost]
 	print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
 	for path in solutions:
 		print(path)
 	print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+	# print(maximum_cost)
 
 
 	# def swapCost(queryTheme, queryWord, swap):
