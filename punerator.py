@@ -197,7 +197,7 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 		else: updatedTuple[1] *= similarityCost * numSwaps
 		back.solutions[lineNum] = tuple(updatedTuple)
 	
-	back.solutions.sort(key=lambda x: x[1])	
+	back.pruneSolution()
 	print("NEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEW")
 	for path in back.solutions:
 		print(path)
