@@ -132,29 +132,94 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel):
 	return ' '.join(ucs.actions)
 
 def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
+	BIGRAM_MAX = 13 #experimentaly defined inf value for bigram missing word from testing
+
 	queryWords = querySentence.split()
 
+	for word in queryWords:
+		if word not in word2vecModel.wv.vocab:
+			print('ERROR: query sentence contains words not contained in word2vec model.')
+			return ''
+
 	if len(queryWords) == 0:
-		print('QUERY SENTENCE HAS NO WORDS')
+		print('ERROR: query sentence has no words.')
 		return ''
 
-	possibleSwaps = util.syn_hyperhypo
-	def swapCost(queryTheme, queryWord, swap):
-		swapPenality = 1
-		if queryWord == swap:
-			#de-incentivize a large number of swaps
-			if queryWord != swap: swapPenality = 10
-		# return math.log(bigramCost(queryWord, swap)**2 * util.wup_similarity(queryTheme, swap)) * swapPenality
-		return util.wup_similarity(queryTheme, swap)
+	possibleSwaps = util.syn_thesaurus
+	# possibleSwaps = util.synonyms
 
-	ucs = util.UniformCostSearch(verbose=1)
-	ucs.solve(PunnificationProblem(queryTheme, queryWords, swapCost, possibleSwaps))
+	back = util.BacktrackingSearch()
+	back.solve(queryWords, possibleSwaps, bigramCost)
 
-	if (ucs.actions == None):
-		print("NO SUBSTITUTIONS FOUND")
-		return queryWords
+	print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+	for path in back.solutions:
+		print(path)
+	print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+	
+	#now take the non-infinite solutions and check pun cost and swap cost
+	def w2vCost(queryWord, swapWord):
+		if swapWord not in word2vecModel.wv.vocab:
+			return float('inf') # word not contained in word vector model, prune
+		similarity = word2vecModel.similarity(queryTheme, swapWord) # -1 to 1, 1 is most similar
+		if similarity < 0:
+			return float('inf') # word has an opposite meaning from theme, prune
+		return similarity
 
-	return ' '.join(ucs.actions)
+	lenPhrase = len(queryWords)
+	for lineNum, lineTuple in enumerate(back.solutions):
+		phrase, cost = lineTuple
+		words = phrase.split(' ')
+		words = words[1:] #bc the first character is a ' ' in the phrase, so '' as first word
+		print("words: {}".format(words))
+		similarityCost = 0
+		numSwaps = 1.0 #bc multiplying to default value is 1 not 0
+		infinity = False
+		
+		for i in range(lenPhrase):
+			queryWord = queryWords[i]
+			swapWord = words[i]
+			if queryWord != swapWord: 
+				numSwaps += 1
+			else:
+				print("what")
+			print("qWord: {}, cWord: {}".format(queryWord, swapWord))
+			simCost = w2vCost(queryWord, swapWord)
+			if simCost == float('inf'):
+				infinity = True
+				break
+			similarityCost += 2 - simCost #bc 1 is best similarity but minimzing cost
+		
+		updatedTuple = [phrase,cost]
+
+		print("phrase: {}, query: {}".format(phrase.strip(), queryWords))
+
+		if infinity or (words == queryWords): updatedTuple[1] = float('inf')
+		else: updatedTuple[1] *= similarityCost * numSwaps
+		back.solutions[lineNum] = tuple(updatedTuple)
+	
+	back.solutions.sort(key=lambda x: x[1])	
+	print("NEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEW")
+	for path in back.solutions:
+		print(path)
+	print("NEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEW")
+	
+
+	# def swapCost(queryTheme, queryWord, swap):
+	# 	swapPenality = 1
+	# 	if queryWord == swap:
+	# 		#de-incentivize a large number of swaps
+	# 		if queryWord != swap: swapPenality = 10
+	# 	# return math.log(bigramCost(queryWord, swap)**2 * util.wup_similarity(queryTheme, swap)) * swapPenality
+	# 	return util.wup_similarity(queryTheme, swap)
+
+	# ucs = util.UniformCostSearch(verbose=1)
+	# ucs.solve(PunnificationProblem(queryTheme, queryWords, swapCost, possibleSwaps))
+
+	# if (ucs.actions == None):
+	# 	print("NO SUBSTITUTIONS FOUND")
+	# 	return queryWords
+
+	# return ' '.join(ucs.actions)
 
 def punnify_sound(queryTheme, querySentence, bigramCost, word2vecModel):
 	queryWords = querySentence.split()
