@@ -220,16 +220,11 @@ class BacktrackingSearch():
 					newCost = totalCost+incrimentalCost
 					backtrack(newPath, newCost, currWord, index+1)
 
-		# totalPath = ""
-		# totalCost = 0
-		# prevWord = '-BEGIN-'
-		# index = 0
 		backtrack("", 0, '-BEGIN-', 0)
 
 		print("NUM RECURSIVE ITERATIONS: {}".format(self.numIterations))
 
 		self.solutions.sort(key=lambda x: x[1])
-
-		# maximum_cost = solutions[-1][1]
-		# solutions = [x for x in solutions if x[1] != maximum_cost]
+		maximum_cost = self.solutions[-1][1]
+		self.solutions = [x for x in self.solutions if x[1] != maximum_cost]
 		

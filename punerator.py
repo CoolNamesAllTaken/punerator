@@ -156,27 +156,53 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 		print(path)
 	print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
 	
-	# solutions = []
-	# costCache = collections.defaultdict(float) #{(prevWord, subWord) : bigramCost(prevWord, subWord)}
-	# def backtrack(totalPath, totalCost, prevWord, substitutions, index):
-	# 	if index == len(queryWords):
-	# 		solutions.append((totalPath, totalCost))
-	# 	else:
-	# 		currWord = queryWords[index]
-	# 		for subWord in substitutions(currWord):
-	# 			newPath = totalPath+" "+subWord
-	# 			incrimentalCost = 0
-	# 			if (prevWord, subWord) in costCache: 
-	# 				incrimentalCost = costCache[(prevWord, subWord)]
-	# 			else:
-	# 				incrimentalCost = bigramCost(prevWord, subWord)
-	# 				costCache[(prevWord, subWord)] = incrimentalCost
-	# 			# if incrimentalCost >= BIGRAM_MAX: #index != 0 and 
-	# 			# 	return
-	# 			newCost = totalCost+incrimentalCost
-	# 			backtrack(newPath, newCost, currWord, substitutions, index+1)
-	# backtrack("", 0, '-BEGIN-', possibleSwaps, 0)
+	#now take the non-infinite solutions and check pun cost and swap cost
+	def w2vCost(queryWord, swapWord):
+		if swapWord not in word2vecModel.wv.vocab:
+			return float('inf') # word not contained in word vector model, prune
+		similarity = word2vecModel.similarity(queryTheme, swapWord) # -1 to 1, 1 is most similar
+		if similarity < 0:
+			return float('inf') # word has an opposite meaning from theme, prune
+		return similarity
 
+	lenPhrase = len(queryWords)
+	for lineNum, lineTuple in enumerate(back.solutions):
+		phrase, cost = lineTuple
+		words = phrase.split(' ')
+		words = words[1:] #bc the first character is a ' ' in the phrase, so '' as first word
+		print("words: {}".format(words))
+		similarityCost = 0
+		numSwaps = 1.0 #bc multiplying to default value is 1 not 0
+		infinity = False
+		
+		for i in range(lenPhrase):
+			queryWord = queryWords[i]
+			swapWord = words[i]
+			if queryWord != swapWord: 
+				numSwaps += 1
+			else:
+				print("what")
+			print("qWord: {}, cWord: {}".format(queryWord, swapWord))
+			simCost = w2vCost(queryWord, swapWord)
+			if simCost == float('inf'):
+				infinity = True
+				break
+			similarityCost += 2 - simCost #bc 1 is best similarity but minimzing cost
+		
+		updatedTuple = [phrase,cost]
+
+		print("phrase: {}, query: {}".format(phrase.strip(), queryWords))
+
+		if infinity or (words == queryWords): updatedTuple[1] = float('inf')
+		else: updatedTuple[1] *= similarityCost * numSwaps
+		back.solutions[lineNum] = tuple(updatedTuple)
+	
+	back.solutions.sort(key=lambda x: x[1])	
+	print("NEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEW")
+	for path in back.solutions:
+		print(path)
+	print("NEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEW")
+	
 
 	# def swapCost(queryTheme, queryWord, swap):
 	# 	swapPenality = 1
