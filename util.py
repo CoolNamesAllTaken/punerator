@@ -188,6 +188,14 @@ class BacktrackingSearch():
 	def __init__(self):
 		self.solutions = []
 
+	def pruneSolution(self):
+		"""
+		Removes all instances of the highest cost present in the solutions set.
+		"""
+		self.solutions.sort(key=lambda x: x[1])
+		maximum_cost = self.solutions[-1][1]
+		self.solutions = [x for x in self.solutions if x[1] != maximum_cost]
+
 	def solve(self, fullPhrase, possibleSwaps, bigramCost):
 		costCache = collections.defaultdict(float) #{(prevWord, subWord) : bigramCost(prevWord, subWord)}
 		
@@ -224,7 +232,6 @@ class BacktrackingSearch():
 
 		print("NUM RECURSIVE ITERATIONS: {}".format(self.numIterations))
 
-		self.solutions.sort(key=lambda x: x[1])
-		maximum_cost = self.solutions[-1][1]
-		self.solutions = [x for x in self.solutions if x[1] != maximum_cost]
+		self.pruneSolution()
+
 		
