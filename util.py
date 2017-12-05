@@ -183,3 +183,53 @@ class PriorityQueue:
 			self.priorities[state] = self.DONE
 			return (state, priority)
 		return (None, None) # Nothing left...
+
+class BacktrackingSearch():
+	def __init__(self):
+		self.solutions = []
+
+	def solve(self, fullPhrase, possibleSwaps, bigramCost):
+		costCache = collections.defaultdict(float) #{(prevWord, subWord) : bigramCost(prevWord, subWord)}
+		
+		self.phrase = fullPhrase
+		self.lenphrase = len(fullPhrase)
+		self.substitutions = possibleSwaps
+		self.bigramCost = bigramCost
+
+		self.numIterations = 0
+		
+		def backtrack(totalPath, totalCost, prevWord, index):
+			self.numIterations += 1
+			if index == self.lenphrase:
+				self.solutions.append((totalPath, totalCost))
+			else:
+				currWord = self.phrase[index]
+				for subWord in self.substitutions(currWord):
+					newPath = totalPath+" "+subWord
+					incrimentalCost = 0
+					if (prevWord, subWord) in costCache: 
+						incrimentalCost = costCache[(prevWord, subWord)]
+					else:
+						incrimentalCost = self.bigramCost(prevWord, subWord)
+						costCache[(prevWord, subWord)] = incrimentalCost
+					#print("prevWord: {}, curWord: {}, cost: {}".format(prevWord, subWord, incrimentalCost))
+					
+					#still working on pruning during iteration
+					# if incrimentalCost >= BIGRAM_MAX: #index != 0 and 
+					# 	return
+					newCost = totalCost+incrimentalCost
+					backtrack(newPath, newCost, currWord, index+1)
+
+		# totalPath = ""
+		# totalCost = 0
+		# prevWord = '-BEGIN-'
+		# index = 0
+		backtrack("", 0, '-BEGIN-', 0)
+
+		print("NUM RECURSIVE ITERATIONS: {}".format(self.numIterations))
+
+		self.solutions.sort(key=lambda x: x[1])
+
+		# maximum_cost = solutions[-1][1]
+		# solutions = [x for x in solutions if x[1] != maximum_cost]
+		

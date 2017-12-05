@@ -147,29 +147,35 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 
 	possibleSwaps = util.syn_thesaurus
 	# possibleSwaps = util.synonyms
-	solutions = []
-	def backtrack(total_path, total_cost, prev_word, phrase, substitutions, index):
-		if index == len(phrase):
-			solutions.append((total_path, total_cost))
-		else:
-			curr_word = phrase[index]
-			for sub_word in substitutions(curr_word):
-				new_path = total_path+" "+sub_word	
-				incrimental_cost = bigramCost(prev_word, sub_word)
-				# if index != 0 and incrimental_cost >= BIGRAM_MAX:
-				# 	return
-				new_cost = total_cost+incrimental_cost
-				backtrack(new_path, new_cost, curr_word, phrase, substitutions, index+1)
-	backtrack("", 0, '-BEGIN-', queryWords, possibleSwaps, 0)
 
-	solutions.sort(key=lambda x: x[1])
-	# maximum_cost = solutions[-1][1]
-	# solutions = [x for x in solutions if x[1] != maximum_cost]
+	back = util.BacktrackingSearch()
+	back.solve(queryWords, possibleSwaps, bigramCost)
+
 	print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-	for path in solutions:
+	for path in back.solutions:
 		print(path)
 	print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-	# print(maximum_cost)
+	
+	# solutions = []
+	# costCache = collections.defaultdict(float) #{(prevWord, subWord) : bigramCost(prevWord, subWord)}
+	# def backtrack(totalPath, totalCost, prevWord, substitutions, index):
+	# 	if index == len(queryWords):
+	# 		solutions.append((totalPath, totalCost))
+	# 	else:
+	# 		currWord = queryWords[index]
+	# 		for subWord in substitutions(currWord):
+	# 			newPath = totalPath+" "+subWord
+	# 			incrimentalCost = 0
+	# 			if (prevWord, subWord) in costCache: 
+	# 				incrimentalCost = costCache[(prevWord, subWord)]
+	# 			else:
+	# 				incrimentalCost = bigramCost(prevWord, subWord)
+	# 				costCache[(prevWord, subWord)] = incrimentalCost
+	# 			# if incrimentalCost >= BIGRAM_MAX: #index != 0 and 
+	# 			# 	return
+	# 			newCost = totalCost+incrimentalCost
+	# 			backtrack(newPath, newCost, currWord, substitutions, index+1)
+	# backtrack("", 0, '-BEGIN-', possibleSwaps, 0)
 
 
 	# def swapCost(queryTheme, queryWord, swap):
