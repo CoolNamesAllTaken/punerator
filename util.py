@@ -39,7 +39,7 @@ def syn_hyperhypo(word):
 			related.add(hyponym.name())
 		for holonym in synset.member_holonyms():
 			related.add(holonym.name())
-
+	related.add(word)
 	return related
 
 def syn_thesaurus(word):
@@ -51,6 +51,7 @@ def syn_thesaurus(word):
 		for lemma in synset:
 			related.add(lemma)
 			# print("word={} related={}".format(word, related))
+	related.add(word)
 	return related
 
 def wup_similarity(word1, word2):

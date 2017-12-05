@@ -134,27 +134,51 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel):
 def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 	queryWords = querySentence.split()
 
+	for word in queryWords:
+		if word not in word2vecModel.wv.vocab:
+			print('ERROR: query sentence contains words not contained in word2vec model.')
+			return ''
+
 	if len(queryWords) == 0:
-		print('QUERY SENTENCE HAS NO WORDS')
+		print('ERROR: query sentence has no words.')
 		return ''
 
-	possibleSwaps = util.syn_hyperhypo
-	def swapCost(queryTheme, queryWord, swap):
-		swapPenality = 1
-		if queryWord == swap:
-			#de-incentivize a large number of swaps
-			if queryWord != swap: swapPenality = 10
-		# return math.log(bigramCost(queryWord, swap)**2 * util.wup_similarity(queryTheme, swap)) * swapPenality
-		return util.wup_similarity(queryTheme, swap)
+	# possibleSwaps = util.syn_thesaurus
+	possibleSwaps = util.synonyms
+	solutions = []
+	def backtrack(total_path, total_cost, prev_word, phrase, substitutions, index):
+		if index == len(phrase):
+			solutions.append((total_path, total_cost))
+		else:
+			curr_word = phrase[index]
+			for sub_word in substitutions(curr_word):
+				new_path = total_path+" "+sub_word
+				new_cost = total_cost+bigramCost(prev_word, sub_word)
+				backtrack(new_path, new_cost, curr_word, phrase, substitutions, index+1)
+	backtrack("", 0, '-BEGIN-', queryWords, possibleSwaps, 0)
 
-	ucs = util.UniformCostSearch(verbose=1)
-	ucs.solve(PunnificationProblem(queryTheme, queryWords, swapCost, possibleSwaps))
+	print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+	for path in solutions:
+		print(path)
+	print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
 
-	if (ucs.actions == None):
-		print("NO SUBSTITUTIONS FOUND")
-		return queryWords
 
-	return ' '.join(ucs.actions)
+	# def swapCost(queryTheme, queryWord, swap):
+	# 	swapPenality = 1
+	# 	if queryWord == swap:
+	# 		#de-incentivize a large number of swaps
+	# 		if queryWord != swap: swapPenality = 10
+	# 	# return math.log(bigramCost(queryWord, swap)**2 * util.wup_similarity(queryTheme, swap)) * swapPenality
+	# 	return util.wup_similarity(queryTheme, swap)
+
+	# ucs = util.UniformCostSearch(verbose=1)
+	# ucs.solve(PunnificationProblem(queryTheme, queryWords, swapCost, possibleSwaps))
+
+	# if (ucs.actions == None):
+	# 	print("NO SUBSTITUTIONS FOUND")
+	# 	return queryWords
+
+	# return ' '.join(ucs.actions)
 
 def punnify_sound(queryTheme, querySentence, bigramCost, word2vecModel):
 	queryWords = querySentence.split()
