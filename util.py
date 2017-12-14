@@ -9,7 +9,7 @@ import heapq, collections, re, sys, time, os, random # CS221 library imports
 
 def synonyms(word):
 	"""
-	Returns the set of synonyms of a word
+	Returns the set of synonyms of a word.  Uses NLTK.
 	"""
 	synonyms = []
 	syns = wn.synsets(word)
@@ -22,7 +22,7 @@ def synonyms(word):
 def syn_hyperhypo(word):
 	"""
 	Returns a set of related, on-theme words by adding the lemmas, hypernyms, and hyponyms
-	for each definition of the word.
+	for each definition of the word.  Uses NLTK.
 	"""
 	related = set()
 	syns = wn.synsets(word)

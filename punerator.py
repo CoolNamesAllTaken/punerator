@@ -75,6 +75,8 @@ class PunnificationProblem(util.SearchProblem):
 		self.costFunc = costFunc
 		self.possibleSwaps = possibleSwaps
 
+		self.possibleSwapsDict = collections.defaultdict(list) # cache swaps for faster performance
+
 	def startState(self):
 		return (wc.SENTENCE_BEGIN, 0) # state is (currWord, queryWords index)
 	def isEnd(self, state):
@@ -83,8 +85,14 @@ class PunnificationProblem(util.SearchProblem):
 	def succAndCost(self, state):
 		edges = []
 		# print("state={}".format(state[0]))
-		swaps = self.possibleSwaps(self.queryWords[state[1]])
-		print("  word={} possibleSwaps={}".format(self.queryWords[state[1]], swaps))
+		lastWord = self.queryWords[state[1]]
+		if (lastWord in self.possibleSwapsDict): # swaps have been cached
+			swaps = self.possibleSwapsDict[lastWord]
+			print("USED SWAPS CACHE")
+		else: # add swaps to cache
+			swaps = self.possibleSwaps(lastWord)
+			self.possibleSwapsDict[lastWord] = swaps
+		print("  word={} possibleSwaps={}".format(lastWord, swaps))
 		if (len(swaps) == 0): # no valid swaps, just append current string and move on
 			swap = self.queryWords[state[1]]
 			action = swap
@@ -127,9 +135,6 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel):
 
 	back = util.BacktrackingSearch()
 	back.solve(PunnificationProblem(queryTheme, queryWords, costFunc, possibleSwaps))
-
-	# ucs = util.UniformCostSearch()
-	# ucs.solve(PunnificationProblem(queryTheme, queryWords, costFunc, possibleSwaps))
 
 	if (back.actions == None):
 		print('ERROR: no substitutions found.')
