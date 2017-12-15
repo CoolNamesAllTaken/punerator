@@ -86,15 +86,13 @@ class PunnificationProblem(util.SearchProblem):
 	def succAndCost(self, state):
 		edges = []
 		# print("state={}".format(state[0]))
-		swaps = self.possibleSwaps(self.queryWords[state[1]])
-		#print("  word={} possibleSwaps={}".format(self.queryWords[state[1]], swaps))
-		# if (len(swaps) == 0): # no valid swaps, just append current string and move on
-		# 	swap = self.queryWords[state[1]]
-		# 	action = swap
-		# 	newState = (swap, state[1] + 1)
-		# 	cost = self.costFunc(self.queryTheme, state[0], swap)
-		# 	edges.append((action, newState, cost))
-		# 	return edges
+		lastWord = self.queryWords[state[1]]
+		if (lastWord in self.possibleSwapsDict): # swaps have been cached
+			swaps = self.possibleSwapsDict[lastWord]
+		else: # add swaps to cache
+			swaps = self.possibleSwaps(lastWord)
+			self.possibleSwapsDict[lastWord] = swaps
+		# print("  word={} possibleSwaps={}".format(lastWord, swaps))
 		for swap in swaps: # found valid fills, step through them and create edges
 			action = swap
 			newState = (swap, state[1] + 1)
@@ -121,12 +119,16 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel, includeBigr
 		else:
 			return util.syn_thesaurus(queryWord) # word can be replaced with synonyms
 	def costFunc(queryTheme, prevWord, swap):
+		if swap in stopwords.words('english'): # word is in stopwords, not an actual substitution
+			return 0
 		if swap not in word2vecModel.wv.vocab: # word not in word vector model
+			# print("{} not in word2vec model".format(swap))
 			return float('inf') # prune
 		similarity = word2vecModel.similarity(queryTheme, swap) # -1 to 1, 1 is most similar
 		if similarity < 0:
+			# print("{} - {} similarity is negative".format(queryTheme, swap))
 			return float('inf') # word has an opposite meaning from theme, prune
-		
+		# print("1/similarity={}".format(1/similarity))
 		if includeBigram: return bigramCost(prevWord, swap) / similarity
 		else: return 1 / similarity
 
@@ -137,7 +139,6 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel, includeBigr
 		print('ERROR: no substitutions found.')
 		return queryWords
 
-	#print back.solutions
 	print back.solutions[0:5]
 	
 	for pun, cost in back.solutions[0:5]:

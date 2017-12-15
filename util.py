@@ -211,21 +211,28 @@ class BacktrackingSearch(SearchAlgorithm):
 				self.solutions.append((path, totalCost))
 			else: # extend path
 				for action, newState, actionCost in problem.succAndCost(state):
+					if actionCost >= float('inf'): continue # only branch if cost < infinity
 					newPath = list(path) # copy old path (pass by value)
 					newPath.append(action) # extend path
 					newTotalCost = totalCost + actionCost
-					#STILL BROKEN. MULTIPLYING THEM ALL TOGETHER GOES TO 0
 					backtrack(newState, newPath, newTotalCost)
-			if self.verbose: print("numIterations={}".format(numIterations))
+			if self.verbose > 1: print("numIterations={}".format(numIterations))
 
 		backtrack(problem.startState(), [], 0)
 		self.solutions.sort(key=lambda x: x[1]) # sort solutions with lowest cost first
-		minCostSolution = self.solutions[0]
 
 		# set SearchAlgorithm things
-		self.actions = minCostSolution[0]
-		self.totalCost = minCostSolution[1]
 		self.numStatesExplored = self.numIterations
+		if self.verbose > 0:
+			print("TOTAL ITERATIONS: {}".format(self.numIterations))
+			print("num solutions: {}".format(len(self.solutions)))
+		if len(self.solutions) == 0: # no solutions found
+			self.actions = None
+			self.totalCost = None
+		else: # found at least one solution
+			minCostSolution = self.solutions[0]
+			self.actions = minCostSolution[0]
+			self.totalCost = minCostSolution[1]
 
 class BacktrackingSearchProblem():
 	def __init__(self):
