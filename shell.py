@@ -66,7 +66,9 @@ def repl(command=None):
 			print('\n'.join(a + '\t' + b for a, b in [
 				('subs\t', 'List synonyms for each word in string'),
 				('sim\t', 'Calculate similarity between two words'),
-				('pun_bs\t', 'Punnifies a string using the baseline algorithm'),
+				('pun_bs\t', 'Punnifies a string using the baseline algorithm, wordnet synonyms and wup similarity'),
+				('pun_tb\t', 'Punnifies a string using Thesaurus API, BigramCost, and Word2Vec similarity'),
+				('pun_t2\t', 'Punnifies a string using Thesaurus API and Word2Vec similarity'),
 				('pun_ai\t', 'Punnifies a string using a sooper dooper fancy AI algorithm (AI baseline)'),
 				('pun_meaning', 'Creates meaning puns (uses synonyms, hypernyms, hyponyms)'),
 				('pun_sound', 'Creates sound puns (uses homophones)'),
@@ -85,10 +87,20 @@ def repl(command=None):
 			words = line.split(None, 1)
 			print("Finding bigram cost for '{} {}'".format(words[0], words[1]))
 			print(BIGRAM_COST(words[0], words[1]))
+		
 		elif cmd == 'pun_bs':
 			theme, sentence = parse_pun_cmd(cmd, line)
-			if not theme and not sentence: continue # not enough inputs
+			if not theme and not sentence: continue
 			punerator.punnify_baseline(theme, sentence)
+		elif cmd == 'pun_tb':
+			theme, sentence = parse_pun_cmd(cmd, line)
+			if not theme and not sentence: continue
+			punerator.punnify_ai(theme, sentence, BIGRAM_COST, WORD2VEC_MODEL, True) 
+		elif cmd == 'pun_t2':
+			theme, sentence = parse_pun_cmd(cmd, line)
+			if not theme and not sentence: continue
+			punerator.punnify_ai(theme, sentence, BIGRAM_COST, WORD2VEC_MODEL, False)
+		
 		elif cmd == 'pun_ai':
 			theme, sentence = parse_pun_cmd(cmd, line)
 			if not theme and not sentence: continue # not enough inputs
