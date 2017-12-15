@@ -34,6 +34,7 @@ def similarity(word1, word2, word2vecModel):
 		return
 	print('word1={}, word2={}, similarity={}'.format(word1, word2, word2vecModel.similarity(word1, word2)))
 ############################################################
+
 # Dumb baseline that probabaly works
 
 def punnify_baseline(theme, sentence):
@@ -49,16 +50,16 @@ def punnify_baseline(theme, sentence):
 		for synonym in util.synonyms(word):
 			swaps.append((synonym, word_index))
 	print("unsorted swaps={}".format(swaps))
-	theme_synset = wn.synsets(theme)[0] # TODO: figure out which synset to use
+	theme_synset = wn.synsets(theme)[0] # Assuming the first synset is the definition we are looking for
 	print(theme_synset)
 	def compare_words(word, theme_synset):
-		word_synset = wn.synsets(word)[0] # TODO: make not first synset
+		word_synset = wn.synsets(word)[0] #Assuming the first synset is what we are looking for
 		print("word={} score={}".format(word, word_synset.wup_similarity(theme_synset)))
 		return word_synset.wup_similarity(theme_synset) # score is wu-palmer similarity between swapped word and theme word
 	swaps.sort(key=lambda swap: compare_words(swap[0], theme_synset), reverse=True) # sort swaps by similarity of swapped word to theme word
 	print("sorted swaps={}".format(swaps))
 
-	best_swaps = swaps[1:5]
+	best_swaps = swaps[0:5]
 	for curr_swap in best_swaps:
 		words_copy = copy.deepcopy(words)
 		words_copy[curr_swap[1]] = curr_swap[0]
@@ -84,14 +85,14 @@ class PunnificationProblem(util.SearchProblem):
 		edges = []
 		# print("state={}".format(state[0]))
 		swaps = self.possibleSwaps(self.queryWords[state[1]])
-		print("  word={} possibleSwaps={}".format(self.queryWords[state[1]], swaps))
-		if (len(swaps) == 0): # no valid swaps, just append current string and move on
-			swap = self.queryWords[state[1]]
-			action = swap
-			newState = (swap, state[1] + 1)
-			cost = self.costFunc(self.queryTheme, state[0], swap)
-			edges.append((action, newState, cost))
-			return edges
+		#print("  word={} possibleSwaps={}".format(self.queryWords[state[1]], swaps))
+		# if (len(swaps) == 0): # no valid swaps, just append current string and move on
+		# 	swap = self.queryWords[state[1]]
+		# 	action = swap
+		# 	newState = (swap, state[1] + 1)
+		# 	cost = self.costFunc(self.queryTheme, state[0], swap)
+		# 	edges.append((action, newState, cost))
+		# 	return edges
 		for swap in swaps: # found valid fills, step through them and create edges
 			action = swap
 			newState = (swap, state[1] + 1)
@@ -100,7 +101,7 @@ class PunnificationProblem(util.SearchProblem):
 			edges.append((action, newState, cost))
 		return edges
 
-def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel):
+def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel, includeBigram):
 	queryWords = querySentence.split()
 
 	for word in queryWords:
@@ -123,21 +124,24 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel):
 		similarity = word2vecModel.similarity(queryTheme, swap) # -1 to 1, 1 is most similar
 		if similarity < 0:
 			return float('inf') # word has an opposite meaning from theme, prune
-		return bigramCost(prevWord, swap) / similarity
+		
+		if includeBigram: return bigramCost(prevWord, swap) / similarity
+		else: return 1 / similarity
 
 	back = util.BacktrackingSearch()
 	back.solve(PunnificationProblem(queryTheme, queryWords, costFunc, possibleSwaps))
-
-	# ucs = util.UniformCostSearch()
-	# ucs.solve(PunnificationProblem(queryTheme, queryWords, costFunc, possibleSwaps))
 
 	if (back.actions == None):
 		print('ERROR: no substitutions found.')
 		return queryWords
 
-	print(' '.join(back.actions))
+	#print back.solutions
+	print back.solutions[0:5]
+	
+	for pun, cost in back.solutions[0:5]:
+	 	print(' '.join(list(pun)))
 
-	return ' '.join(back.actions)
+	return ' '.join(back.solutions[0][0])
 
 def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 	BIGRAM_MAX = 13 #experimentaly defined inf value for bigram missing word from testing
@@ -159,14 +163,9 @@ def punnify_meaning(queryTheme, querySentence, bigramCost, word2vecModel):
 		else:
 			return util.syn_thesaurus(queryWord) # word can be replaced with synonyms
 
-	back = util.BacktrackingSearch()
+	back = util.BacktrackingSearchProblem()
 	back.solve(queryWords, possibleSwaps, bigramCost)
 
-	# print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-	# for path in back.solutions:
-	# 	print(path)
-	# print("WEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-	
 	#now take the non-infinite solutions and check pun cost and swap cost
 	def w2vCost(queryWord, swapWord):
 		if swapWord not in word2vecModel.wv.vocab:

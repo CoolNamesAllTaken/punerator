@@ -214,6 +214,7 @@ class BacktrackingSearch(SearchAlgorithm):
 					newPath = list(path) # copy old path (pass by value)
 					newPath.append(action) # extend path
 					newTotalCost = totalCost + actionCost
+					#STILL BROKEN. MULTIPLYING THEM ALL TOGETHER GOES TO 0
 					backtrack(newState, newPath, newTotalCost)
 			if self.verbose: print("numIterations={}".format(numIterations))
 
@@ -225,3 +226,54 @@ class BacktrackingSearch(SearchAlgorithm):
 		self.actions = minCostSolution[0]
 		self.totalCost = minCostSolution[1]
 		self.numStatesExplored = self.numIterations
+
+class BacktrackingSearchProblem():
+	def __init__(self):
+		self.solutions = []
+
+	def pruneSolution(self):
+		"""
+		Removes all instances of the highest cost present in the solutions set.
+		Note: sorts in reverse order and sets the highest cost element to be the first element of solutions.
+		"""
+		self.solutions.sort(key=lambda x: x[1], reverse=True)
+		maximum_cost = self.solutions[0][1]
+		self.solutions = [x for x in self.solutions if x[1] != maximum_cost]
+
+	def solve(self, fullPhrase, possibleSwaps, bigramCost):
+		costCache = collections.defaultdict(float) #{(prevWord, subWord) : bigramCost(prevWord, subWord)}
+		
+		self.phrase = fullPhrase
+		self.lenphrase = len(fullPhrase)
+		self.substitutions = possibleSwaps
+		self.bigramCost = bigramCost
+
+		self.numIterations = 0
+		
+		def backtrack(totalPath, totalCost, prevWord, index):
+			self.numIterations += 1
+			if index == self.lenphrase:
+				self.solutions.append((totalPath, totalCost))
+			else:
+				currWord = self.phrase[index]
+				for subWord in self.substitutions(currWord):
+					newPath = totalPath+" "+subWord
+					incrimentalCost = 0
+					if (prevWord, subWord) in costCache: 
+						incrimentalCost = costCache[(prevWord, subWord)]
+					else:
+						incrimentalCost = self.bigramCost(prevWord, subWord)
+						costCache[(prevWord, subWord)] = incrimentalCost
+					#print("prevWord: {}, curWord: {}, cost: {}".format(prevWord, subWord, incrimentalCost))
+					
+					#still working on pruning during iteration
+					# if incrimentalCost >= BIGRAM_MAX: #index != 0 and 
+					# 	return
+					newCost = totalCost+incrimentalCost
+					backtrack(newPath, newCost, currWord, index+1)
+
+		backtrack("", 0, '-BEGIN-', 0)
+
+		print("NUM RECURSIVE ITERATIONS: {}".format(self.numIterations))
+
+		#self.pruneSolution()
