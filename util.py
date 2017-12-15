@@ -39,7 +39,6 @@ def syn_hyperhypo(word):
 			related.add(hyponym.name())
 		for holonym in synset.member_holonyms():
 			related.add(holonym.name())
-	related.add(word)
 	return related
 
 def syn_thesaurus(word):
@@ -51,7 +50,6 @@ def syn_thesaurus(word):
 		for lemma in synset:
 			related.add(lemma)
 			# print("word={} related={}".format(word, related))
-	related.add(word) # add in the original word
 	return related
 
 def wup_similarity(word1, word2):
@@ -188,16 +186,7 @@ class UniformCostSearch(SearchAlgorithm):
 class BacktrackingSearch(SearchAlgorithm):
 	def __init__(self, verbose=0):
 		self.verbose = verbose
-		self.solutions = []
-
-	def pruneSolution(self):
-		"""
-		Removes all instances of the highest cost present in the solutions set.
-		Note: sorts in reverse order and sets the highest cost element to be the first element of solutions.
-		"""
-		self.solutions.sort(key=lambda x: x[1], reverse=True)
-		maximum_cost = self.solutions[0][1]
-		self.solutions = [x for x in self.solutions if x[1] != maximum_cost]
+		self.solutions = set() # avoid duplicate solutions with set
 
 	def solve(self, problem): # fullPhrase, possibleSwaps, bigramCost
 		# TODO: re-implement
@@ -208,7 +197,7 @@ class BacktrackingSearch(SearchAlgorithm):
 		def backtrack(state, path, totalCost):
 			self.numIterations += 1
 			if problem.isEnd(state): # found solution
-				self.solutions.append((path, totalCost))
+				self.solutions.add((tuple(path), totalCost))
 			else: # extend path
 				for action, newState, actionCost in problem.succAndCost(state):
 					if actionCost >= float('inf'): continue # only branch if cost < infinity
@@ -219,6 +208,7 @@ class BacktrackingSearch(SearchAlgorithm):
 			if self.verbose > 1: print("numIterations={}".format(numIterations))
 
 		backtrack(problem.startState(), [], 0)
+		self.solutions = list([x for x in self.solutions if x[1] > 0]) # prune solutions with 0 substitutions
 		self.solutions.sort(key=lambda x: x[1]) # sort solutions with lowest cost first
 
 		# set SearchAlgorithm things
@@ -226,6 +216,7 @@ class BacktrackingSearch(SearchAlgorithm):
 		if self.verbose > 0:
 			print("TOTAL ITERATIONS: {}".format(self.numIterations))
 			print("num solutions: {}".format(len(self.solutions)))
+			if self.verbose > 1: print(self.solutions)
 		if len(self.solutions) == 0: # no solutions found
 			self.actions = None
 			self.totalCost = None
@@ -233,54 +224,3 @@ class BacktrackingSearch(SearchAlgorithm):
 			minCostSolution = self.solutions[0]
 			self.actions = minCostSolution[0]
 			self.totalCost = minCostSolution[1]
-
-class BacktrackingSearchProblem():
-	def __init__(self):
-		self.solutions = []
-
-	def pruneSolution(self):
-		"""
-		Removes all instances of the highest cost present in the solutions set.
-		Note: sorts in reverse order and sets the highest cost element to be the first element of solutions.
-		"""
-		self.solutions.sort(key=lambda x: x[1], reverse=True)
-		maximum_cost = self.solutions[0][1]
-		self.solutions = [x for x in self.solutions if x[1] != maximum_cost]
-
-	def solve(self, fullPhrase, possibleSwaps, bigramCost):
-		costCache = collections.defaultdict(float) #{(prevWord, subWord) : bigramCost(prevWord, subWord)}
-		
-		self.phrase = fullPhrase
-		self.lenphrase = len(fullPhrase)
-		self.substitutions = possibleSwaps
-		self.bigramCost = bigramCost
-
-		self.numIterations = 0
-		
-		def backtrack(totalPath, totalCost, prevWord, index):
-			self.numIterations += 1
-			if index == self.lenphrase:
-				self.solutions.append((totalPath, totalCost))
-			else:
-				currWord = self.phrase[index]
-				for subWord in self.substitutions(currWord):
-					newPath = totalPath+" "+subWord
-					incrimentalCost = 0
-					if (prevWord, subWord) in costCache: 
-						incrimentalCost = costCache[(prevWord, subWord)]
-					else:
-						incrimentalCost = self.bigramCost(prevWord, subWord)
-						costCache[(prevWord, subWord)] = incrimentalCost
-					#print("prevWord: {}, curWord: {}, cost: {}".format(prevWord, subWord, incrimentalCost))
-					
-					#still working on pruning during iteration
-					# if incrimentalCost >= BIGRAM_MAX: #index != 0 and 
-					# 	return
-					newCost = totalCost+incrimentalCost
-					backtrack(newPath, newCost, currWord, index+1)
-
-		backtrack("", 0, '-BEGIN-', 0)
-
-		print("NUM RECURSIVE ITERATIONS: {}".format(self.numIterations))
-
-		#self.pruneSolution()

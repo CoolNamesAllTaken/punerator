@@ -69,8 +69,6 @@ def repl(command=None):
 				('pun_bs\t', 'Punnifies a string using the baseline algorithm, wordnet synonyms and wup similarity'),
 				('pun_tb\t', 'Punnifies a string using Thesaurus API, BigramCost, and Word2Vec similarity'),
 				('pun_t2\t', 'Punnifies a string using Thesaurus API and Word2Vec similarity'),
-				('pun_meaning', 'Creates meaning puns (uses synonyms, hypernyms, hyponyms)'),
-				('pun_sound', 'Creates sound puns (uses homophones)'),
 				('train\t', 'Trains unigram/bigram costs on the text corpus'),
 			]))
 			print('')
@@ -99,14 +97,6 @@ def repl(command=None):
 			theme, sentence = parse_pun_cmd(cmd, line)
 			if not theme and not sentence: continue
 			punerator.punnify_ai(theme, sentence, BIGRAM_COST, WORD2VEC_MODEL, False)
-		elif cmd == 'pun_meaning':
-			theme, sentence = parse_pun_cmd(cmd, line)
-			if not theme and not sentence: continue # not enough inputs
-			punerator.punnify_meaning(theme, sentence, BIGRAM_COST, WORD2VEC_MODEL)
-		elif cmd == 'pun_sound':
-			theme, sentence = parse_pun_cmd(cmd, line)
-			if not theme and not sentence: continue # not enough inputs
-			punerator.punnify_meaning(theme, sentence, BIGRAM_COST, WORD2VEC_MODEL)
 		elif cmd == 'train':
 			print('Training bigram/unigram cost functions on corpus...')
 			wc.createCosts(CORPUS_PATH, UNIGRAM_PATH, BIGRAM_PATH)

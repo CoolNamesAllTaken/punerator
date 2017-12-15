@@ -61,27 +61,3 @@ def loadCosts(unigramPath, bigramPath):
 	unigramCost = pickle.load(open(unigramPath, "rb"))
 	bigramCost = pickle.load(open(bigramPath, "rb"))
 	return unigramCost, bigramCost
-#*********************************************************************************
-#Usage Example
-#*********************************************************************************
-
-# CORPUS = 'text.txt'
-# t0 = time.time()
-
-# #if generating file
-# unigramCost, bigramCost = calculateCosts(CORPUS)
-# pickle.dump(unigramCost, open("uni", "wb"))
-# pickle.dump(bigramCost, open("bi", "wb"))
-
-# #if reading file
-# unigramCost = pickle.load(open("uni", "rb"))
-# bigramCost = pickle.load(open("bi", "rb"))
-
-
-# print("unigram cost of 'and': " + str(unigramCost("and")))
-# print("unigram cost of 'he': " + str(unigramCost("he")))
-# print("unigram cost of 'fuck': " + str(unigramCost("fuck")))
-# print("bigram cost of 'and' and 'he': " + str(bigramCost("and", "he")))
-# print("bigram cost of 'and' and 'fuck': " + str(bigramCost("and", "fuck")))
-# print("\n")
-# print("function ran in this many seconds: " + str(time.time() - t0))
