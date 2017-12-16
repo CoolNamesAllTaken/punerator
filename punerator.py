@@ -8,13 +8,7 @@ from nltk.corpus import stopwords
 import wordCostUtil as wc
 import shell, util, collections, copy, math
 
-'''
-TODO:
-- decide which definition of the word the user means (probably the first, but maybe use machine learning?)
-- homophones: expand the defintion of pun to be both meaning and sounds like (more like a traditional puns)
-	. list of words that sounds similar and compare based on sound instead of definition. output both.
-- heterophones? 
-'''
+MAX_NUM_SOLUTIONS = 10 # maximum number of solutions to punnification problem to display
 
 def substitutions(sentence):
 	"""
@@ -59,7 +53,7 @@ def punnify_baseline(theme, sentence):
 	swaps.sort(key=lambda swap: compare_words(swap[0], theme_synset), reverse=True) # sort swaps by similarity of swapped word to theme word
 	print("sorted swaps={}".format(swaps))
 
-	best_swaps = swaps[0:5]
+	best_swaps = swaps[0:min(len(swaps), MAX_NUM_SOLUTIONS)]
 	for curr_swap in best_swaps:
 		words_copy = copy.deepcopy(words)
 		words_copy[curr_swap[1]] = curr_swap[0]
@@ -138,10 +132,8 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel, includeBigr
 	if (back.actions == None):
 		print('ERROR: no substitutions found.')
 		return queryWords
-
-	# print back.solutions[0:5]
 	
-	for pun, cost in back.solutions[0:5]:
+	for pun, cost in back.solutions[0:min(len(back.solutions), MAX_NUM_SOLUTIONS)]:
 	 	print(' '.join(list(pun)))
 
 	return ' '.join(back.solutions[0][0])

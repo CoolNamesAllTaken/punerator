@@ -189,9 +189,6 @@ class BacktrackingSearch(SearchAlgorithm):
 		self.solutions = set() # avoid duplicate solutions with set
 
 	def solve(self, problem): # fullPhrase, possibleSwaps, bigramCost
-		# TODO: re-implement
-		costCache = collections.defaultdict(float) #{(prevWord, subWord) : bigramCost(prevWord, subWord)}
-
 		self.numIterations = 0
 
 		def backtrack(state, path, totalCost):
