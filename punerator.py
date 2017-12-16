@@ -129,7 +129,6 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel, includeBigr
 		if similarity < 0:
 			# print("{} - {} similarity is negative".format(queryTheme, swap))
 			return float('inf') # word has an opposite meaning from theme, prune
-		# print("1/similarity={}".format(1/similarity))
 		if includeBigram: return bigramCost(prevWord, swap) / similarity
 		else: return 1 / similarity
 
@@ -140,7 +139,7 @@ def punnify_ai(queryTheme, querySentence, bigramCost, word2vecModel, includeBigr
 		print('ERROR: no substitutions found.')
 		return queryWords
 
-	print back.solutions[0:5]
+	# print back.solutions[0:5]
 	
 	for pun, cost in back.solutions[0:5]:
 	 	print(' '.join(list(pun)))

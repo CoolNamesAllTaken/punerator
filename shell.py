@@ -57,8 +57,6 @@ def repl(command=None):
 			cmd = command
 			line = line
 
-		print('')
-
 		if cmd == 'help':
 			print('Usage: <command> [arg1, arg2, ...]')
 			print('')
@@ -99,7 +97,7 @@ def repl(command=None):
 			punerator.punnify_ai(theme, sentence, BIGRAM_COST, WORD2VEC_MODEL, False)
 		elif cmd == 'train':
 			print('Training bigram/unigram cost functions on corpus...')
-			wc.createCosts(CORPUS_PATH, UNIGRAM_PATH, BIGRAM_PATH)
+			wc.trainCosts(CORPUS_PATH, UNIGRAM_PATH, BIGRAM_PATH)
 			print('Done!')
 		else:
 			print('Unrecognized command:', cmd)
