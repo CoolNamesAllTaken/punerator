@@ -34,6 +34,15 @@ he is a comic
 `subs <words>` Lists substitutions (synonyms) for each word in words
 `sim <word1> <word2>` Prints word2vec word similarity for two words
 
+## Folders
+The folder structure of the program is shown below.  If no models are being trained, the corpora/ folder can be omitted.
+```
+punerator/
+	corpora/
+	models/
+	thesaurus_api/
+```
+
 ## corpora/
 Add EnglishText.txt to the corpora folder for bigram retraining.  Not required for running the program if bigram cost has already been trained (bigram and unigram cost functions are saved in models/).  Corpora can be downloaded [here](https://drive.google.com/drive/folders/1-M4lIEzhLOQlofToD6S7KpCwlVTBR7xu?usp=sharing)
 
@@ -42,14 +51,24 @@ Add the GoogleNews pre-trained word2vec binary to the models/ folder.  The file 
 
 ## Dependencies
 `pip install --upgrade gensim` (used as a word2vec interface)
+
 `pip install cython` (used to parallelize word2vec learning)
+
 `pip install dill` (used to store learned models)
+
 `pip install beautifulsoup4` (used by Thesaurus API for web scraping)
+
 `pip install nltk` (used for wordnet, corpus)
+
 From python terminal, run:
-	`import nltk`
-	`nltk.download()`
-	NLTK may throw an error on the first run, follow the terminal instructions for arguments in nltk.download to resolve.
+```
+import nltk
+nltk.download()
+```
+NLTK may throw an error on the first run, follow the terminal instructions for arguments in nltk.download to resolve.
+
 `pip install scipy` (used by gensim)
+
 `pip install numpy` (used by gensim)
+
 may require `pip_install smart_open` on Windows
